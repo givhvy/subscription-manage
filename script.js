@@ -1,51 +1,104 @@
-// Subscription Manager JavaScript
+// Subscription Manager JavaScript with Firebase
 
 // State Management
 let subscriptions = [];
+let editingSubscriptionId = null; // Track which subscription is being edited
 
-// Load subscriptions from localStorage on page load
-function loadSubscriptions() {
-    const stored = localStorage.getItem('subscriptions');
-    if (stored) {
-        subscriptions = JSON.parse(stored);
-    } else {
-        // Demo data
-        subscriptions = [
-            {
-                id: Date.now() + 1,
-                name: 'Netflix',
-                cost: 15.99,
-                billing: 'monthly',
-                category: 'entertainment',
-                nextPayment: '2025-11-15'
-            },
-            {
-                id: Date.now() + 2,
-                name: 'Spotify',
-                cost: 9.99,
-                billing: 'monthly',
-                category: 'music',
-                nextPayment: '2025-11-20'
-            },
-            {
-                id: Date.now() + 3,
-                name: 'Adobe Creative Cloud',
-                cost: 54.99,
-                billing: 'monthly',
-                category: 'software',
-                nextPayment: '2025-11-10'
+// Firestore collection reference
+const subscriptionsCollection = () => window.db.collection('subscriptions');
+
+// Load subscriptions from Firestore on page load
+async function loadSubscriptions() {
+    try {
+        const snapshot = await subscriptionsCollection().get();
+
+        if (snapshot.empty) {
+            // Add demo data if no subscriptions exist
+            const demoData = [
+                {
+                    name: 'Netflix',
+                    cost: 15.99,
+                    billing: 'monthly',
+                    category: 'entertainment',
+                    nextPayment: '2025-11-15'
+                },
+                {
+                    name: 'Spotify',
+                    cost: 9.99,
+                    billing: 'monthly',
+                    category: 'music',
+                    nextPayment: '2025-11-20'
+                },
+                {
+                    name: 'Adobe Creative Cloud',
+                    cost: 54.99,
+                    billing: 'monthly',
+                    category: 'software',
+                    nextPayment: '2025-11-10'
+                }
+            ];
+
+            // Add demo subscriptions to Firestore
+            for (const sub of demoData) {
+                await subscriptionsCollection().add(sub);
             }
-        ];
-        saveSubscriptions();
+
+            // Reload after adding demo data
+            await loadSubscriptions();
+            return;
+        }
+
+        // Load subscriptions from Firestore
+        subscriptions = [];
+        snapshot.forEach(doc => {
+            subscriptions.push({
+                id: doc.id,
+                ...doc.data()
+            });
+        });
+
+        renderSubscriptions();
+        updateStats();
+        updateAnalytics();
+    } catch (error) {
+        console.error('Error loading subscriptions:', error);
+        alert('Error loading subscriptions. Please check Firebase configuration.');
     }
-    renderSubscriptions();
-    updateStats();
-    updateAnalytics();
 }
 
-// Save subscriptions to localStorage
-function saveSubscriptions() {
-    localStorage.setItem('subscriptions', JSON.stringify(subscriptions));
+// Add new subscription to Firestore
+async function addSubscription(subscriptionData) {
+    try {
+        await subscriptionsCollection().add(subscriptionData);
+        await loadSubscriptions(); // Reload to get the new data
+    } catch (error) {
+        console.error('Error adding subscription:', error);
+        alert('Error adding subscription.');
+    }
+}
+
+// Update subscription in Firestore
+async function updateSubscription(id, subscriptionData) {
+    try {
+        await subscriptionsCollection().doc(id).update(subscriptionData);
+        await loadSubscriptions(); // Reload to get the updated data
+    } catch (error) {
+        console.error('Error updating subscription:', error);
+        alert('Error updating subscription.');
+    }
+}
+
+// Delete subscription from Firestore
+async function deleteSubscription(id) {
+    if (confirm('Are you sure you want to delete this subscription?')) {
+        try {
+            await subscriptionsCollection().doc(id).delete();
+            await loadSubscriptions(); // Reload after deletion
+        } catch (error) {
+            console.error('Error deleting subscription:', error);
+            alert('Error deleting subscription.');
+        }
+    }
 }
 
 // Calculate monthly cost from any billing cycle
@@ -106,7 +159,10 @@ function renderSubscriptions() {
                     Next payment
                     <strong>${formatDate(sub.nextPayment)}</strong>
                 </div>
-                <button class="delete-btn" onclick="deleteSubscription(${sub.id})">Delete</button>
+                <div class="action-buttons">
+                    <button class="edit-btn" onclick="openEditModal('${sub.id}')">Edit</button>
+                    <button class="delete-btn" onclick="deleteSubscription('${sub.id}')">Delete</button>
+                </div>
             </div>
         </div>
     `).join('');
@@ -186,33 +242,56 @@ function capitalizeFirst(str) {
     return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-// Delete subscription
-function deleteSubscription(id) {
-    if (confirm('Are you sure you want to delete this subscription?')) {
-        subscriptions = subscriptions.filter(sub => sub.id !== id);
-        saveSubscriptions();
-        renderSubscriptions();
-        updateStats();
-        updateAnalytics();
-    }
-}
-
 // Modal Management
 const modal = document.getElementById('add-subscription-modal');
 const addBtn = document.getElementById('add-subscription-btn');
+const addBtnHeader = document.getElementById('add-subscription-btn-header');
 const closeBtn = document.getElementById('modal-close');
 const cancelBtn = document.getElementById('cancel-btn');
 const form = document.getElementById('subscription-form');
+const modalTitle = document.querySelector('.modal-header h3');
+const submitBtn = document.querySelector('#subscription-form button[type="submit"]');
 
-// Open modal
-addBtn.addEventListener('click', () => {
+// Function to open modal for adding new subscription
+function openAddModal() {
+    editingSubscriptionId = null;
+    modalTitle.textContent = 'Add New Subscription';
+    submitBtn.textContent = 'Add Subscription';
     modal.classList.add('active');
     form.reset();
-});
+}
+
+// Open modal for adding new subscription (from main button)
+addBtn.addEventListener('click', openAddModal);
+
+// Open modal for adding new subscription (from header button)
+if (addBtnHeader) {
+    addBtnHeader.addEventListener('click', openAddModal);
+}
+
+// Open modal for editing subscription
+function openEditModal(id) {
+    const subscription = subscriptions.find(sub => sub.id === id);
+    if (!subscription) return;
+
+    editingSubscriptionId = id;
+    modalTitle.textContent = 'Edit Subscription';
+    submitBtn.textContent = 'Update Subscription';
+
+    // Fill form with subscription data
+    document.getElementById('sub-name').value = subscription.name;
+    document.getElementById('sub-cost').value = subscription.cost;
+    document.getElementById('sub-billing').value = subscription.billing;
+    document.getElementById('sub-category').value = subscription.category;
+    document.getElementById('sub-date').value = subscription.nextPayment;
+
+    modal.classList.add('active');
+}
 
 // Close modal
 function closeModal() {
     modal.classList.remove('active');
+    editingSubscriptionId = null;
 }
 
 closeBtn.addEventListener('click', closeModal);
@@ -225,12 +304,11 @@ modal.addEventListener('click', (e) => {
     }
 });
 
-// Handle form submission
-form.addEventListener('submit', (e) => {
+// Handle form submission (Add or Update)
+form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    const newSubscription = {
-        id: Date.now(),
+    const subscriptionData = {
         name: document.getElementById('sub-name').value,
         cost: parseFloat(document.getElementById('sub-cost').value),
         billing: document.getElementById('sub-billing').value,
@@ -238,11 +316,14 @@ form.addEventListener('submit', (e) => {
         nextPayment: document.getElementById('sub-date').value
     };
 
-    subscriptions.push(newSubscription);
-    saveSubscriptions();
-    renderSubscriptions();
-    updateStats();
-    updateAnalytics();
+    if (editingSubscriptionId) {
+        // Update existing subscription
+        await updateSubscription(editingSubscriptionId, subscriptionData);
+    } else {
+        // Add new subscription
+        await addSubscription(subscriptionData);
+    }
+
     closeModal();
 });
 
@@ -279,20 +360,12 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
 });
 
 // Initialize on page load
-document.addEventListener('DOMContentLoaded', loadSubscriptions);
+document.addEventListener('DOMContentLoaded', () => {
+    // Wait for Firebase to be ready
+    if (typeof firebase !== 'undefined' && window.db) {
+        loadSubscriptions();
+    } else {
+        console.error('Firebase not initialized. Please check firebase-config.js');
+    }
+});
 
-// Chart.js placeholder (if you want to add actual charts later)
-const canvas = document.getElementById('monthly-chart');
-if (canvas) {
-    const ctx = canvas.getContext('2d');
-    ctx.fillStyle = 'rgba(166, 218, 255, 0.1)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    ctx.font = '16px Inter';
-    ctx.fillStyle = '#d5dbe6';
-    ctx.textAlign = 'center';
-    ctx.fillText('Chart visualization', canvas.width / 2, canvas.height / 2);
-    ctx.font = '12px Inter';
-    ctx.fillStyle = 'rgba(213, 219, 230, 0.7)';
-    ctx.fillText('(Add Chart.js for interactive charts)', canvas.width / 2, canvas.height / 2 + 25);
-}

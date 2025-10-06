@@ -327,16 +327,36 @@ body {
     margin-top: 0.25rem;
 }
 
+.action-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.edit-btn,
 .delete-btn {
-    background: rgba(255, 77, 77, 0.1);
-    color: #ff4d4d;
-    border: 1px solid rgba(255, 77, 77, 0.3);
     padding: 0.5rem 1rem;
     border-radius: var(--radius-sm);
     cursor: pointer;
     font-size: 0.85rem;
     font-weight: 600;
     transition: all var(--transition-fast);
+}
+
+.edit-btn {
+    background: rgba(166, 218, 255, 0.1);
+    color: var(--color-accent);
+    border: 1px solid rgba(166, 218, 255, 0.3);
+}
+
+.edit-btn:hover {
+    background: rgba(166, 218, 255, 0.2);
+    border-color: var(--color-accent);
+}
+
+.delete-btn {
+    background: rgba(255, 77, 77, 0.1);
+    color: #ff4d4d;
+    border: 1px solid rgba(255, 77, 77, 0.3);
 }
 
 .delete-btn:hover {
@@ -376,12 +396,77 @@ body {
 }
 
 .chart-placeholder {
-    min-height: 200px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    min-height: 250px;
+    padding: var(--spacing-md);
     background: rgba(20, 20, 20, 0.5);
     border-radius: var(--radius-sm);
+}
+
+/* Bar Chart Styles */
+.bar-chart {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    height: 200px;
+    gap: 0.5rem;
+    padding: 1rem 0.5rem 0;
+}
+
+.bar-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    height: 100%;
+}
+
+.bar {
+    width: 100%;
+    background: linear-gradient(180deg, var(--color-accent) 0%, var(--color-accent-secondary) 100%);
+    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+    position: relative;
+    transition: all var(--transition-normal);
+    min-height: 20px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    animation: barGrow 0.8s ease forwards;
+}
+
+@keyframes barGrow {
+    from {
+        height: 0;
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.bar:hover {
+    filter: brightness(1.2);
+    transform: translateY(-2px);
+}
+
+.bar-value {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    padding: 0.25rem;
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+}
+
+.bar:hover .bar-value {
+    opacity: 1;
+}
+
+.bar-label {
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    font-weight: 600;
+    text-transform: uppercase;
 }
 
 .category-list,

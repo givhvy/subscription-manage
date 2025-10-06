@@ -1,103 +1,190 @@
-# Subscription Manager
+# Subscription Manager - CRUD Application with Firebase
 
-A beautiful, modern subscription tracking website built with the Landio design system featuring dark theme and glassmorphism effects.
+Ung dung quan ly subscription voi day du chuc nang CRUD (Create, Read, Update, Delete) va Firebase Firestore database.
 
-## Features
+## Tinh nang
 
-- **Track Subscriptions**: Add, view, and delete your recurring subscriptions
-- **Cost Analytics**: Real-time calculation of monthly and yearly costs
-- **Category Breakdown**: Organize subscriptions by category (Entertainment, Productivity, Software, etc.)
-- **Upcoming Payments**: Never miss a payment with the upcoming payments tracker
-- **Responsive Design**: Works perfectly on desktop, tablet, and mobile devices
-- **Local Storage**: All data is saved locally in your browser
-- **Modern UI**: Dark theme with glassmorphism effects, inspired by Landio template
+- ✅ **Create**: Them subscription moi
+- ✅ **Read**: Xem danh sach tat ca subscriptions
+- ✅ **Update**: Chinh sua subscription hien co
+- ✅ **Delete**: Xoa subscription
+- ✅ **Firebase Firestore**: Database realtime cloud
+- ✅ **Analytics**: Thong ke chi phi theo category
+- ✅ **Upcoming Payments**: Xem thanh toan sap toi
 
-## Tech Stack
+---
 
-- **HTML5**: Semantic markup
-- **CSS3**: Modern CSS with variables, glassmorphism, and responsive design
-- **Vanilla JavaScript**: No frameworks, pure JS for functionality
-- **LocalStorage API**: Client-side data persistence
+## Setup Firebase (5 phut thoi!)
 
-## Design Features
+### Buoc 1: Tao Project & Lay Config (3 phut)
 
-- Dark background (`#04070d`)
-- Glassmorphism with backdrop blur effects
-- Gradient accents (`#a6daff` to `#6b9cff`)
-- Inter font family
-- Smooth animations and transitions
-- Mobile-first responsive design
+1. Vao https://console.firebase.google.com/
+2. Click **"Add project"** → Dat ten → **Tat** Google Analytics → Create
+3. Doi project tao xong, click **"Continue"**
+4. Click icon **Web** `</>` (goc tren cung, ben canh iOS/Android)
+5. Dat ten app → Click **"Register app"**
+6. **Copy toan bo doan code** trong phan `firebaseConfig`:
 
-## Getting Started
+```javascript
+// Copy cai nay!
+const firebaseConfig = {
+  apiKey: "AIzaSyXXXXXXXXXXXXXXXXX",
+  authDomain: "ten-project-cua-ban.firebaseapp.com",
+  projectId: "ten-project-cua-ban",
+  storageBucket: "ten-project-cua-ban.appspot.com",
+  messagingSenderId: "123456789012",
+  appId: "1:123456789012:web:abcdef123456"
+};
+```
 
-1. Open `app.html` in your web browser
-2. Click "Add New" to add your first subscription
-3. Fill in the subscription details:
-   - Service Name
-   - Cost
-   - Billing Cycle (Monthly, Yearly, Weekly)
-   - Category
-   - Next Payment Date
-4. View your analytics and upcoming payments
+7. **Paste vao file `firebase-config.js`** (thay the phan YOUR_API_KEY...)
 
-## File Structure
+### Buoc 2: Bat Firestore Database (2 phut)
+
+1. Trong Firebase Console, menu ben trai → Click **"Firestore Database"**
+2. Click **"Create database"**
+3. Chon **"Start in test mode"** → Next
+4. Chon location (chon **asia-southeast1** cho VN) → Enable
+5. Xong! Database da ready
+
+**LUU Y**: Test mode cho phep ai cung doc/ghi duoc (dung cho hoc tap). Production can setup rules bao mat.
+
+### Buoc 3: Chay thoi!
+
+Mo file `app.html` trong browser la xong!
+
+---
+
+## Tai sao KHONG dung Service Account Key?
+
+**Service Account Key CHI DUNG CHO BACKEND (Node.js server)**, KHONG dung cho web app!
+
+❌ **KHONG duoc:**
+- Service Account Key (file .json) → Chi cho server-side
+- Admin SDK → Chi cho Node.js/Python backend
+
+✅ **PHAI DUNG:**
+- Firebase Web SDK (nhu da setup o tren)
+- Config voi apiKey, authDomain... → An toan cho frontend
+- Firebase tu dong bao mat qua Firestore Rules
+
+**Ly do:** Service Account Key cho full admin access, neu de len web ai cung thay duoc va hack database ban!
+
+---
+
+## Cach su dung
+
+### Them Subscription (Create)
+
+1. Click nut "Add New" hoac "+ Add Subscription"
+2. Dien thong tin:
+   - Service Name (ten dich vu)
+   - Cost (gia)
+   - Billing Cycle (chu ky thanh toan)
+   - Category (phan loai)
+   - Next Payment Date (ngay thanh toan tiep theo)
+3. Click "Add Subscription"
+
+### Xem Subscriptions (Read)
+
+- Tat ca subscriptions se hien thi trong "Your Subscriptions" section
+- Xem thong ke tong quan o phan "Analytics & Insights"
+
+### Sua Subscription (Update)
+
+1. Click nut "Edit" tren subscription card ban muon sua
+2. Modal se mo voi thong tin hien tai
+3. Chinh sua thong tin
+4. Click "Update Subscription"
+
+### Xoa Subscription (Delete)
+
+1. Click nut "Delete" tren subscription card
+2. Xac nhan xoa trong dialog
+3. Subscription se bi xoa khoi Firestore
+
+---
+
+## Cau truc Project
 
 ```
 subscription-manager/
-├── app.html       # Main HTML file
-├── styles.css     # All styles with Landio design system
-├── script.js      # Subscription management logic
-└── README.md      # This file
+├── app.html              # Main HTML file (file chinh de chay)
+├── index.html            # Landing page
+├── styles.css            # Styles
+├── script.js             # JavaScript logic + CRUD functions
+├── firebase-config.js    # Firebase configuration
+└── README.md            # Huong dan nay
 ```
 
-## Demo Data
+## Firestore Database Structure
 
-The app comes with 3 demo subscriptions:
-- Netflix ($15.99/month)
-- Spotify ($9.99/month)
-- Adobe Creative Cloud ($54.99/month)
+```
+subscriptions/
+  └── {documentId}
+      ├── name: string
+      ├── cost: number
+      ├── billing: string ('monthly' | 'yearly' | 'weekly')
+      ├── category: string
+      └── nextPayment: string (date)
+```
 
-You can delete these and add your own subscriptions.
+---
 
-## Browser Support
+## Troubleshooting
 
-- Chrome/Edge (latest)
-- Firefox (latest)
-- Safari (latest)
-- Mobile browsers
+### Loi: "Firebase not initialized"
+- Kiem tra xem ban da thay doi config trong `firebase-config.js` chua
+- Dam bao Firebase SDK duoc load truoc `firebase-config.js`
 
-## Customization
+### Loi: "Permission denied"
+- Vao Firebase Console > Firestore Database > Rules
+- Trong development mode, rules nen nhu sau:
+  ```
+  rules_version = '2';
+  service cloud.firestore {
+    match /databases/{database}/documents {
+      match /{document=**} {
+        allow read, write: if true;
+      }
+    }
+  }
+  ```
+- **Luu y**: Rules nay CHI dung cho development. Production can rules bao mat hon.
 
-### Colors
-Edit CSS variables in `styles.css`:
-```css
-:root {
-    --color-accent: #a6daff;
-    --color-bg-primary: #04070d;
-    /* ... more variables */
+### Khong thay data
+- Mo Console (F12) de xem errors
+- Kiem tra Firebase Console > Firestore Database xem data co duoc tao khong
+
+---
+
+## Security (Production)
+
+Khi deploy production, cap nhat Firestore rules:
+
+```
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /subscriptions/{document} {
+      allow read, write: if request.auth != null;
+    }
+  }
 }
 ```
 
-### Categories
-Add more categories in `app.html` line 127-135:
-```html
-<option value="your-category">Your Category</option>
-```
+Va them Firebase Authentication de bao mat.
 
-## Future Enhancements
+---
 
-- Export data to CSV
-- Import subscriptions
-- Email reminders
-- Chart.js integration for visual analytics
-- Multi-currency support
-- Dark/Light theme toggle
-- Subscription sharing between devices
+## Technologies Used
+
+- HTML5
+- CSS3 (Custom Properties)
+- Vanilla JavaScript (ES6+)
+- Firebase Firestore 9.22.0
+- No framework - Pure JavaScript!
 
 ## License
 
-Free to use for personal and commercial projects.
-
-## Credits
-
-Design inspired by Landio - AI Agency & Landing Page Template (Framer)
+MIT License - Free to use
